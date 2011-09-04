@@ -21,7 +21,8 @@ read.diBayes.gff <- function(file) {
     fc[fc==""] <- "NA"
     gff$funccode <- factor(fc)
     gff$titv <- mapply(function(x,y) {.titv.df[x,y]}, gff$genotype, gff$reference)
-    class(gff) <- c("diBayes")
+    ## Dangerous: assuming gene names have no commas or :
+    gff$gene <- gsub(":[0-9]+$", "", gsub("^[0-9]+:", "", gsub(",.*", "", gff$functionCode)))
     gff
 }
 

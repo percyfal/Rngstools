@@ -1,4 +1,5 @@
-plot.diBayes.qc <-
+## TODO: Make S4 generic function on a RangedData object
+plotQCdiBayes <-
 function(db, steps=c(1,5,100), breaks=c(50, 100, 10000), ...) {
     if (length(steps) != length(breaks))
         stop("length(steps) != length(breaks)")
@@ -12,12 +13,27 @@ function(db, steps=c(1,5,100), breaks=c(50, 100, 10000), ...) {
     titv <- do.call("rbind", lapply(names(dbqc), function(x) {dbqc[[x]]; if (!is.na(dbqc[[x]])) cbind(stack(as.data.frame(dbqc[[x]]$titv)), x)}))
 }
 
-plot.diBayes <-
-function(res, ...) {
-    barplot(t(res$chrstats), beside=TRUE, ...)
+## Enable formula expression?
+plot.diBayes <- function(res, type="chr", genenames=NULL, cond=NULL, ...) {
+    type <- match.arg(type, c("chr", "gene"))
+    if (type == "chr") {
+        chrdata <- space(res)
+        i <- !grepl("[a-zA-Z]", levels(chrdata))
+        newl <- c(sort(as.integer(levels(chrdata)[i])), levels(chrdata)[!i])
+        chrdata <- factor(chrdata, levels=newl)
+        barchart(chrdata, xlab="Freq", ...)
+    }
+    else if (type == "gene") {
+        if (!is.null(genenames)) {
+            z <- do.call("c", lapply(genenames, function(x) {tmp <- grep(x, res$functionCode); y <- if(length(tmp)>1) length(tmp) else 0; names(y) <- x; y}))
+            barchart(z, xlab="Freq", ylab="Genes", ...)
+        } else {
+            stop("please provide gene names")
+        }
+    }
 }
 
-diBayes <-
+summary.diBayes <-
 function(db, fc.return=FALSE) {
     res <- list()
     labs <- c("all", "hom", "het")
