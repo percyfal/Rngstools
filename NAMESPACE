@@ -1,2 +1,4 @@
-import(IRanges)
 import(rtracklayer)
+importFrom(lattice, barchart)
+
+exportPattern(".+")

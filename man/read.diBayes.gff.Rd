@@ -2,10 +2,10 @@
 \alias{read.diBayes.gff}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+  read.diBayes.gff
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+  Read a diBayes gff output file
 }
 \usage{
 read.diBayes.gff(file)

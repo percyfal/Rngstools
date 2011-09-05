@@ -9,4 +9,4 @@ Description: R functions for NGS analysis. Currently has functions for reading a
 License: Artistic-2.0
 LazyLoad: yes
 Depends: R (>= 2.13.0)
-Import: IRanges, rtracklayer, lattice
+Imports: rtracklayer, lattice

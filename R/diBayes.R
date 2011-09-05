@@ -1,3 +1,10 @@
+## TODO move to data file
+.titv <- as.factor(c("ti", "tv", "ti", "tv", "tv", "ti", "tv", "tv", "ti", "tv",
+                    "tv", "ti", "tv", "ti", "tv", "ti", "tv", "tv", "ti", "tv",
+                    "ti", "tv", "ti", "tv", "tv", "ti", "tv", "tv", "ti", "tv",
+                    "tv", "ti", "tv", "ti", "tv", "ti", "tv", "tv", "ti", "tv"))
+.iub <- c("A", "C", "G", "T", "M", "R", "W", "S", "Y", "K")
+
 ## TODO: Make S4 generic function on a RangedData object
 plotQCdiBayes <-
 function(db, steps=c(1,5,100), breaks=c(50, 100, 10000), ...) {
@@ -51,10 +58,10 @@ function(db, fc.return=FALSE) {
     res$basic <- c(sum(table(db$het)), table(db$het))
     names(res$basic) <- labs
 
-    genotype <-  factor(db$genotype, levels=iub)
+    genotype <-  factor(db$genotype, levels=.iub)
     res$snpchanges <- table(genotype, reference=factor(db$reference, levels=c("A", "C", "G", "T")) )
     het <- rep(c(rep("hom", 4), rep("het", 6)), 4)
-    res$titv <- tapply(res$snpchanges, list(titv, het), sum)
+    res$titv <- tapply(res$snpchanges, list(.titv, het), sum)
     res$titv <- cbind(res$titv, all=margin.table(res$titv, 1))
     ## Chromosome stats
     chrdata <- space(db)
@@ -96,7 +103,7 @@ function(fc, ...) {
     barplot(fctab, horiz=TRUE, legend.text=labs, ...)
 }
 
-diBayes_filter <-
+filter.diBayes <-
 function(db, cov=c(0,1000), score=c(0, 1), genenames=NULL, ...) {
     i.all <- rep(FALSE, dim(db)[1])
     i.cov <- db$coverage >= cov[1] & db$coverage <= cov[2]
