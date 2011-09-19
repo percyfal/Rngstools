@@ -13,11 +13,12 @@ function(db, steps=c(1,5,100), breaks=c(50, 100, 10000), ...) {
     cr <- range(db$coverage)
     s <- c(hist(db$coverage[db$coverage >= min(cr) & db$coverage < breaks[1]], plot=FALSE, breaks=(breaks[1]-min(cr))/steps[1])$breaks,
            hist(db$coverage[db$coverage >= breaks[1] & db$coverage < breaks[2]], plot=FALSE, breaks=(breaks[2]-breaks[1])/steps[2])$breaks,
-           hist(db$coverage[db$coverage >= breaks[2] & db$coverage <= max(c(cr, breaks))], plot=FALSE, breaks=(max(c(cr, breaks)) - breaks[2])/steps[3])$breaks)
-    slab <- paste(s-1, s, sep="-")
-    dbqc <- lapply(s, function(x) {db.filt <- diBayes_filter(db, cov=c(x-1, x)); if (dim(db.filt)[1]>0) summarize_diBayes(db.filt) else NA})
-    names(dbqc) <- slab
-    titv <- do.call("rbind", lapply(names(dbqc), function(x) {dbqc[[x]]; if (!is.na(dbqc[[x]])) cbind(stack(as.data.frame(dbqc[[x]]$titv)), x)}))
+           hist(db$coverage[db$coverage >= breaks[2] & db$coverage <= max(c(cr, breaks))], plot=FALSE, breaks=(min(c(max(cr), max(breaks))) - breaks[2])/steps[3])$breaks)
+    s <- unique(s)
+    slab <- c(paste(s[1:length(s)-1], s[2:length(s)], sep="-"), paste(s[length(s)], "", sep="-"))
+    it <- cut(db$coverage, s, include.lowest=TRUE)
+    db$bin <- it
+    dotchart(table(db$titv, it)[1,]/table(db$titv,it)[2,], ylab="coverage", xlab="ti/tv", ...)
 }
 
 ## Enable formula expression?
