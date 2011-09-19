@@ -104,7 +104,7 @@ function(fc, ...) {
 }
 
 filter.diBayes <-
-function(db, cov=c(0,1000), score=c(0, 1), genenames=NULL, ...) {
+function(db, cov=c(0,Inf), score=c(0, 1), genenames=NULL, ...) {
     i.all <- rep(FALSE, dim(db)[1])
     i.cov <- db$coverage >= cov[1] & db$coverage <= cov[2]
     i.score <- db$score >= score[1] & db$score <= score[2]
