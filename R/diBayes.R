@@ -133,10 +133,32 @@ setMethod("summary",
               res$chrstats <- xtabs(~ space + het, data=obj.df)
               res$chrstats <- cbind(res$chrstats, all=margin.table(res$chrstats, 1))
               colnames(res$chrstats) <- labs
+              ## Note: difficult to make general annotation object
+              ## Do we have a maf column?
+              if ("maf" %in% colnames(object)) {
+                  inThouGe <- factor(!is.na(object$maf), levels=c(FALSE, TRUE))
+                  ThouGe <- table(inThouGe, object$het)
+                  res$ThouGe <- list()
+                  res$ThouGe$count <- c(ThouGe[2,],
+                                        margin.table(ThouGe,1)[2])
+                  names(res$ThouGe$count) <- labs
+              }
               res
-          }
+                     }
           )
 
+setGeneric("addAnnotation", function(object, annobj) {standardGeneric("addAnnotation")})
+
+setMethod("addAnnotation",
+          signature=signature(
+          object="diBayes"),
+          function(object, annobj) {
+              j <- match(object, annobj)
+              object[[colnames(annobj)]] <- NA
+              object[[colnames(annobj)]][which(!is.na(j))] <- annobj[[colnames(annobj)]][j[!is.na(j)]]
+              object
+          }
+          )
 setGeneric("funcCodes", function(object) {standardGeneric("funcCodes")})
 
 setMethod("funcCodes",
@@ -175,13 +197,13 @@ setMethod("plotFunctionalCode",
           }
           )
 
-##setGeneric("print", function(object, which="all") {standardGeneric("print")})
-setMethod("print",
+setGeneric("printSummary", function(object, which="all") {standardGeneric("printSummary")})
+setMethod("printSummary",
           signature=signature(
           object="diBayes"),
           function(object, which="all") {
               objsum <- summary(object)
-              res <- rbind(all=objsum$basic, objsum$titv, dbsnp=objsum$dbsnp$count)
+              res <- rbind(all=objsum$basic, objsum$titv, dbsnp=objsum$dbsnp$count, thouGe=objsum$ThouGe$count)
               res
           }
           )
