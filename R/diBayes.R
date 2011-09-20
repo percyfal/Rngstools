@@ -34,26 +34,28 @@ read.diBayes.gff <- function(file) {
 }
 
 ## filterVariants
-setGeneric("filterVariants", function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, maf.freq=0, only.novel=FALSE) {standardGeneric("filterVariants")})
+setGeneric("filterVariants", function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, maf.freq=0, only.novel=FALSE, only.dbsnp=FALSE) {standardGeneric("filterVariants")})
 
 setMethod("filterVariants",
           signature=signature(
           object="diBayes"),
-          function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, maf.freq=0, only.novel=FALSE) {
-    i.all <- rep(FALSE, dim(db)[1])
-    i.cov <- db$coverage >= cov[1] & db$coverage <= cov[2]
-    i.score <- db$score >= score[1] & db$score <= score[2]
-    i.maffreq <- db$novelAlleleCounts/(db$refAlleleCounts + db$novelAlleleCounts) > maf.freq
-    i.names <- !i.all
-    if (!is.null(genenames)) {
-        i.names <- i.all
-        i.names[do.call("c", lapply(genenames, grep, db$functionCode))] <- TRUE
-    }
-    i <- i.cov & i.score & i.names & i.maffreq
-    if (only.novel)
-        i <- i & is.na(db$rsID)
-    new("diBayes", db[i,])
-}
+          function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, maf.freq=0, only.novel=FALSE, only.dbsnp=FALSE) {
+              i.all <- rep(FALSE, dim(object)[1])
+              i.cov <- object$coverage >= cov[1] & object$coverage <= cov[2]
+              i.score <- object$score >= score[1] & object$score <= score[2]
+              i.maffreq <- object$novelAlleleCounts/(object$refAlleleCounts + object$novelAlleleCounts) > maf.freq
+              i.names <- !i.all
+              if (!is.null(genenames)) {
+                  i.names <- i.all
+                  i.names[do.call("c", lapply(genenames, grep, object$functionCode))] <- TRUE
+              }
+              i <- i.cov & i.score & i.names & i.maffreq
+              if (only.novel)
+                  i <- i & is.na(object$rsID)
+              if (only.dbsnp)
+                  i <- i & !is.na(object$rsID)
+    new("diBayes", object[i,])
+          }
           )
 
 ## plotQC
@@ -67,7 +69,7 @@ setMethod("plotQC",
               ylab = "Freq"
               db = object[object$coverage >= min(range) & object$coverage <= max(range),]
               steps <- seq(min(range), max(range), by=stepsize)
-              db$intervals <- cut(db$coverage, steps, include.lowest=TRUE)
+              object$intervals <- cut(object$coverage, steps, include.lowest=TRUE)
               term.labels <- labels(terms.formula(formula))
               term.labels <- gsub("\\|", "+", term.labels)
               if (titv.ratio) {
@@ -106,28 +108,31 @@ setMethod("summary",
           signature=signature(
           object="diBayes"),
           function(object) {
+              obj.df <- as.data.frame(object)
               res <- list()
-              labs <- c("all", "hom", "het")
+              labs <- c("hom", "het", "all")
               indbsnp <- factor(!is.na(object$rsID), levels=c(FALSE, TRUE))
               object$het <- factor(object$het, levels=c(0,1))
               dbsnp <- table(indbsnp, object$het)
               res$dbsnp <- list()
-              res$dbsnp$conc <- c(prop.table(margin.table(dbsnp, 1))[2],
-                                  prop.table(table(indbsnp, object$het),2)[2,])
+              res$dbsnp$conc <- c(prop.table(table(indbsnp, object$het),2)[2,],
+                                  prop.table(margin.table(dbsnp, 1))[2])
               names(res$dbsnp$conc) <- labs
-              res$dbsnp$count <- c(margin.table(dbsnp,1)[2],
-                                   dbsnp[2,])
+              res$dbsnp$count <- c(dbsnp[2,],
+                                   margin.table(dbsnp,1)[2])
               names(res$dbsnp$count) <- labs
-              res$basic <- c(sum(table(object$het)), table(object$het))
+              res$basic <- xtabs(~ het, data=obj.df)
+              res$basic <- c(res$basic, all=margin.table(res$basic))
               names(res$basic) <- labs
-                            genotype <-  factor(object$genotype, levels=.iub)
+              genotype <-  factor(object$genotype, levels=.iub)
               res$snpchanges <- table(genotype, reference=factor(object$reference, levels=c("A", "C", "G", "T")) )
-              het <- rep(c(rep("hom", 4), rep("het", 6)), 4)
-              res$titv <- tapply(res$snpchanges, list(.titv, het), sum)
+              res$titv <- xtabs(~ titv + het, data=obj.df)
               res$titv <- cbind(res$titv, all=margin.table(res$titv, 1))
+              colnames(res$titv) <- labs
               ## Chromosome stats
-              res$chrstats <- xtabs(~ space + het, data=as.data.frame(object))
+              res$chrstats <- xtabs(~ space + het, data=obj.df)
               res$chrstats <- cbind(res$chrstats, all=margin.table(res$chrstats, 1))
+              colnames(res$chrstats) <- labs
               res
           }
           )
@@ -169,3 +174,15 @@ setMethod("plotFunctionalCode",
               barplot(fc.tab, horiz=TRUE, legend.text=labs, ...)
           }
           )
+
+##setGeneric("print", function(object, which="all") {standardGeneric("print")})
+setMethod("print",
+          signature=signature(
+          object="diBayes"),
+          function(object, which="all") {
+              objsum <- summary(object)
+              res <- rbind(all=objsum$basic, objsum$titv, dbsnp=objsum$dbsnp$count)
+              res
+          }
+          )
+
