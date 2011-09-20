@@ -34,26 +34,28 @@ read.diBayes.gff <- function(file) {
 }
 
 ## filterVariants
-setGeneric("filterVariants", function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, maf.freq=0, only.novel=FALSE, only.dbsnp=FALSE) {standardGeneric("filterVariants")})
+setGeneric("filterVariants", function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, allele.freq=0, maf.freq=0, only.novel=FALSE, only.dbsnp=FALSE) {standardGeneric("filterVariants")})
 
 setMethod("filterVariants",
           signature=signature(
           object="diBayes"),
-          function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, maf.freq=0, only.novel=FALSE, only.dbsnp=FALSE) {
+          function(object, cov=c(0,Inf), score=c(0, 1), genenames=NULL, allele.freq=0, maf.freq=1, only.novel=FALSE, only.dbsnp=FALSE) {
               i.all <- rep(FALSE, dim(object)[1])
               i.cov <- object$coverage >= cov[1] & object$coverage <= cov[2]
               i.score <- object$score >= score[1] & object$score <= score[2]
-              i.maffreq <- object$novelAlleleCounts/(object$refAlleleCounts + object$novelAlleleCounts) > maf.freq
+              i.allelefreq <- object$novelAlleleCounts/(object$refAlleleCounts + object$novelAlleleCounts) > allele.freq
+              i.maffreq <- object$maf < maf.freq
+              i.maffreq[is.na(i.maffreq)] <- TRUE
               i.names <- !i.all
               if (!is.null(genenames)) {
                   i.names <- i.all
                   i.names[do.call("c", lapply(genenames, grep, object$functionCode))] <- TRUE
               }
-              i <- i.cov & i.score & i.names & i.maffreq
+              i <- i.cov & i.score & i.names & i.allelefreq & i.maffreq
               if (only.novel)
-                  i <- i & is.na(object$rsID)
+                  i <- i & is.na(object$rsID) & is.na(object$maf)
               if (only.dbsnp)
-                  i <- i & !is.na(object$rsID)
+                  i <- i & !is.na(object$rsID) & !is.na(object$maf)
     new("diBayes", object[i,])
           }
           )
@@ -69,7 +71,7 @@ setMethod("plotQC",
               ylab = "Freq"
               db = object[object$coverage >= min(range) & object$coverage <= max(range),]
               steps <- seq(min(range), max(range), by=stepsize)
-              object$intervals <- cut(object$coverage, steps, include.lowest=TRUE)
+              db$intervals <- cut(db$coverage, steps, include.lowest=TRUE)
               term.labels <- labels(terms.formula(formula))
               term.labels <- gsub("\\|", "+", term.labels)
               if (titv.ratio) {
