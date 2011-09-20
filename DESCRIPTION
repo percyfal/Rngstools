@@ -1,8 +1,8 @@
 Package: Rngstools
 Type: Package
 Title: Utility functions for next generation sequencing analysis
-Version: 1.0
-Date: 2011-09-04
+Version: 1.1.0
+Date: 2011-09-20
 Author: Per Unneberg
 Maintainer: <per.unneberg@scilifelab.se>
 Description: R functions for NGS analysis. Currently has functions for reading and summarizing gff files from SOLiD platform.
