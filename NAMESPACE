@@ -1,4 +1,4 @@
 import(rtracklayer)
 importFrom(lattice, barchart)
 
-exportPattern(".+")
+exportPattern("^[[:alpha:]]+")
