@@ -2,6 +2,10 @@ import(rtracklayer)
 importFrom(lattice, barchart)
 
 exportMethods(
+              ## gatkio
               read.DepthOfCoverage,
+              plotDepthOfCoverage,
+              plotSampleIntervalSummary,
+              ## utils
               print.xtable.booktabs
               )
