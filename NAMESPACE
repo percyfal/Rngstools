@@ -1,4 +1,7 @@
 import(rtracklayer)
 importFrom(lattice, barchart)
 
-exportPattern("^[[:alpha:]]+")
+exportMethods(
+              read.DepthOfCoverage,
+              print.xtable.booktabs
+              )
