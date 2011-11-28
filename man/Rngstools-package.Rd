@@ -8,15 +8,14 @@ Utilities for dealing with next generation sequencing data
 \description{
   Utilities for dealing with next generation sequencing data.
 
-  Functions for reading and analysis of SOLiD output.
 }
 \details{
 \tabular{ll}{
 Package: \tab Rngstools\cr
 Type: \tab Package\cr
 Version: \tab 1.0\cr
-Date: \tab 2011-09-04\cr
-License: \tab What license is it under?\cr
+Date: \tab 2011-11-27\cr
+License: \tab Artistic-2.0\cr
 LazyLoad: \tab yes\cr
 }
 ~~ An overview of how to use the package, including the most important ~~
@@ -25,8 +24,8 @@ LazyLoad: \tab yes\cr
 \author{
 Who wrote it
 
-Maintainer: Who to complain to <yourfault@somewhere.net>
-~~ The author and/or maintainer of the package ~~
+Maintainer: Per Unneberg <punneberg@gmail.com>
+~~ Per Unneberg ~~
 }
 \references{
 ~~ Literature or other references for background information ~~

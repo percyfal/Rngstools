@@ -2,11 +2,11 @@ Package: Rngstools
 Type: Package
 Title: Utility functions for next generation sequencing analysis
 Version: 0.1
-Date: 2011-10-27
+Date: 2011-11-27
 Author: Per Unneberg
-Maintainer: <per.unneberg@scilifelab.se>
-Description: Miscallaneous R functions for NGS analysis.
+Maintainer: <punneberg@gmail.com>
+Description: R functions for NGS analysis
 License: Artistic-2.0
 LazyLoad: yes
 Depends: R (>= 2.12.0)
-Imports: rtracklayer, lattice
+Imports: rtracklayer, lattice, IRanges
