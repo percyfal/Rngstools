@@ -3,9 +3,12 @@ importFrom(lattice, barchart)
 
 exportMethods(
               ## gatkio
-              read.DepthOfCoverage,
               plotDepthOfCoverage,
-              plotSampleIntervalSummary,
-              ## utils
-              print.xtable.booktabs
+              plotSampleIntervalSummary
               )
+
+export(
+       read.DepthOfCoverage,
+       ## utils
+       print.xtable.booktabs
+       )
