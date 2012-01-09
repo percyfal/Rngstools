@@ -1,4 +1,4 @@
-DEPTHOFCOVERAGE_LABELS = c("cumulative_coverage_counts", "cumulative_coverage_proportions", "interval_statistics", "interval_summary", "statistics")
+DEPTHOFCOVERAGE_LABELS = c("cumulative_coverage_counts", "cumulative_coverage_proportions", "interval_statistics", "interval_summary", "statistics", "summary")
 
 read.DepthOfCoverage <- function(prefix, indir="./", ...) {
     X <- lapply(DEPTHOFCOVERAGE_LABELS, function(x) {
