@@ -10,5 +10,7 @@ exportMethods(
 export(
        read.DepthOfCoverage,
        ## utils
-       print.xtable.booktabs
+       print.xtable.booktabs,
+       ## 454
+       read454.metrics
        )
