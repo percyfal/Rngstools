@@ -3,13 +3,13 @@ read454.metrics <- function(indir) {
     lines <- gsub("\"", "", readLines(infile))
     i <- grep("^Key", lines)
     res <- list()
-    res$region1 <- list()
-    res$region2 <- list()
-    res$region1$data <- read.csv(textConnection(lines[(i[1]):(i[1]+2)]))
-    res$region2$data <- read.csv(textConnection(lines[(i[2]):(i[2]+2)]))
+    res$data <- rbind(cbind(region="region1", read.csv(textConnection(lines[(i[1]):(i[1]+2)]))),
+                      cbind(region="region2", read.csv(textConnection(lines[(i[2]):(i[2]+2)]))))
     i <- grep("^Accuracy", lines )
     j <- grep("^region", lines )
-    res$region1$accuracy <- read.csv(textConnection(lines[(i[1]):(j[2]-2)]))
-    res$region2$accuracy <- read.csv(textConnection(lines[(i[2]):length(lines)]))
+    ## res$region1$accuracy <- read.csv(textConnection(lines[(i[1]):(j[2]-2)]))
+    ## res$region2$accuracy <- read.csv(textConnection(lines[(i[2]):length(lines)]))
+    res$accuracy <- rbind(cbind(region="region1", read.csv(textConnection(lines[(i[1]):(j[2]-2)]))),
+                          cbind(region="region2", read.csv(textConnection(lines[(i[2]):length(lines)]))))
     return(res)
 }
