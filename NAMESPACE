@@ -12,5 +12,10 @@ export(
        ## utils
        print.xtable.booktabs,
        ## 454
-       read454.metrics
+       read454.metrics,
+       ## picard
+       read.dup_metrics,
+       read.insert_metrics,
+       read.hs_metrics,
+       read.algin_metrics
        )
