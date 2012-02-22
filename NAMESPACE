@@ -17,5 +17,5 @@ export(
        read.dup_metrics,
        read.insert_metrics,
        read.hs_metrics,
-       read.algin_metrics
+       read.align_metrics
        )
