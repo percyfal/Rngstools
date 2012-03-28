@@ -1,5 +1,4 @@
-import(rtracklayer)
-importFrom(lattice, barchart)
+import(rtracklayer, lattice)
 
 exportMethods(
               ## gatkio
@@ -17,5 +16,8 @@ export(
        read.dup_metrics,
        read.insert_metrics,
        read.hs_metrics,
-       read.align_metrics
+       read.align_metrics,
+       ## bcbb.R
+       flowcellreport.miseq,
+       flowcellreport.hiseq
        )
