@@ -1,4 +1,6 @@
-import(rtracklayer, lattice)
+import(rtracklayer)
+importFrom(lattice,stripplot,xyplot,bwplot,simpleTheme)
+importFrom(yaml,yaml.load_file)
 
 exportMethods(
               ## gatkio

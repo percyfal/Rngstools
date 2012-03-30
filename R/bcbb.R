@@ -75,7 +75,7 @@ get_hiseq_metrics <- function(dir, runinfo, pattern, type=c("dup", "hs", "insert
 
 
 flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run_info.yaml") {
-    fc <- basename(indir)
+    fc <- basename(analysisdir)
     tmp <- yaml.load_file(file.path(flowcelldir, run_info))
     runinfo.tmp <- as.data.frame(do.call("rbind", lapply(tmp, function(x) {do.call("cbind", x)})))
     runinfo <- cbind(runinfo.tmp, do.call("rbind", runinfo.tmp$multiplex))
@@ -163,7 +163,7 @@ dev.off()
     ##                 as.matrix(alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",], rownames=FALSE))
 
     ## res.df
-    
+
     res.df <- list(dupmetrics=dupmetrics.res.tab,
                    insertmetrics=insertmetrics.res.tab,
                    hsmetrics=hsmetrics.res.tab,
