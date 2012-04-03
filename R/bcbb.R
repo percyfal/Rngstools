@@ -80,12 +80,16 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
     runinfo.tmp <- as.data.frame(do.call("rbind", lapply(tmp, function(x) {do.call("cbind", x)})))
     runinfo <- cbind(runinfo.tmp, do.call("rbind", runinfo.tmp$multiplex))
     rownames(runinfo) <- paste(runinfo$lane, runinfo$barcode_id, sep="_")
+    runinfo.sampleorder <- rownames(runinfo)
     dupmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.dup_metrics", type="dup")
     alnmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.align_metrics", type="align")
     hsmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.hs_metrics", type="hs")
     insertmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.insert_metrics", type="insert")
 
     dupmetrics.res.tab <- do.call("rbind", lapply(dupmetrics.res, function(x) {x$metrics}))
+    if (length(setdiff(rownames(runinfo), rownames(dupmetrics.res.tab))) > 0) {
+        dupmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(dupmetrics.res.tab),]),] <- NA
+    }
     dupmetrics.res.tab$SAMPLE <- rownames(dupmetrics.res.tab)
     dupmetrics.res.tab$lane <- do.call("c", runinfo[match(dupmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
     dupmetrics.res.tab$project <- do.call("c", runinfo[match(dupmetrics.res.tab$SAMPLE,rownames(runinfo)),]$sample_prj)
@@ -102,6 +106,9 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
 
 
     alnmetrics.res.tab <- do.call("rbind", lapply(alnmetrics.res, function(x) {x$metrics}))
+    if (length(setdiff(paste(rownames(runinfo), ".1", sep=""), rownames(alnmetrics.res.tab))) > 0) {
+        alnmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(alnmetrics.res.tab),]),] <- NA
+    }
     alnmetrics.res.tab <- cbind(alnmetrics.res.tab, SAMPLE= rep(names(alnmetrics.res), each=3))
     alnmetrics.res.tab$lane <- do.call("c", runinfo[match(alnmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
     alnmetrics.res.tab$project <- do.call("c", runinfo[match(alnmetrics.res.tab$SAMPLE,rownames(runinfo)),]$sample_prj)
@@ -123,6 +130,9 @@ dev.off()
     dev.off()
 
     insertmetrics.res.tab <- do.call("rbind", lapply(insertmetrics.res, function(x) {x$metrics}))
+    if (length(setdiff(rownames(runinfo), rownames(insertmetrics.res.tab))) > 0) {
+        insertmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(insertmetrics.res.tab),]),] <- NA
+    }
     insertmetrics.res.hist <- do.call("rbind", lapply(names(insertmetrics.res), function(x) {cbind(insertmetrics.res[[x]]$histogram[,c("insert_size", "fr_count")], sample=x)}))
 
     pdf(file=file.path(outdir, "insert-summary.pdf"))
@@ -130,9 +140,14 @@ dev.off()
     dev.off()
 
     hsmetrics.res.tab <- do.call("rbind", lapply(hsmetrics.res, function(x) {x$metrics}))
+    if (length(setdiff(rownames(runinfo), rownames(hsmetrics.res.tab))) > 0) {
+        hsmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(hsmetrics.res.tab),]),] <- NA
+    }
     hsmetrics.res.tab <- cbind(SAMPLE=rownames(hsmetrics.res.tab), hsmetrics.res.tab)
     hsmetrics.res.tab$lane <- do.call("c", runinfo[match(hsmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
     hsmetrics.res.tab$project <- do.call("c", runinfo[match(hsmetrics.res.tab$SAMPLE,rownames(runinfo)),]$sample_prj)
+    hsmetrics.res.tab <- cbind(hsmetrics.res.tab, PERCENT_ON_TARGET=hsmetrics.res.tab$FOLD_ENRICHMENT/(hsmetrics.res.tab$GENOME_SIZE / hsmetrics.res.tab$TARGET_TERRITORY)* 100)
+
 
     pdf(file=file.path(outdir, "hs-summary.pdf"))
     print(xyplot(FOLD_ENRICHMENT / (GENOME_SIZE/TARGET_TERRITORY) ~ SAMPLE, data=hsmetrics.res.tab, xlab="Sample", ylab="Percent on target", main="Percent on target", scales=(list(x=list(rot=45))), par.settings=simpleTheme(pch=19)))
@@ -157,22 +172,31 @@ dev.off()
     print(bwplot(values ~ ind | project, data=hsmetrics.stack, scales=list(x=list(rot=45)), main="Percentage bases with a given coverage.", xlab="Coverage", ylab="Percentage bases", ylim=c(0,100), par.settings=simpleTheme(pch=19)))
     dev.off()
 
-    ## res.df <- cbind(dupmetrics.res.tab, insertmetrics.res.tab, hsmetrics.res.tab,
-    ##                 as.matrix(alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",], rownames=FALSE),
-    ##                 as.matrix(alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",], rownames=FALSE),
-    ##                 as.matrix(alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",], rownames=FALSE))
+    res.df <- cbind(runinfo[runinfo.sampleorder,], dupmetrics.res.tab[runinfo.sampleorder,], insertmetrics.res.tab[runinfo.sampleorder,], hsmetrics.res.tab[runinfo.sampleorder,],
+                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",][paste(runinfo.sampleorder, "3", sep="."),],
+                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",][paste(runinfo.sampleorder, "1", sep="."),],
+                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",][paste(runinfo.sampleorder, "2", sep="."),])
+    res.df$lane <- as.integer(res.df$lane)
+    res.df$barcode_id <- as.integer(res.df$barcode_id)
+    res.df$name <- as.character(res.df$name)
 
+    res.list <- list(dupmetrics=dupmetrics.res.tab,
+                     insertmetrics=insertmetrics.res.tab,
+                     hsmetrics=hsmetrics.res.tab,
+                     alnmetrics=alnmetrics.res.tab,
+                     alnmetrics_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",],
+                     alnmetrics_first_of_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",],
+                     alnmetrics_second_of_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",])
+
+
+    ## Write a table with the most important information
+    ## dupmetrics
+    reportfile <- file.path(outdir, paste(fc, "-metrics.txt", sep=""))
     ## res.df
+    reportcols <- c("SAMPLE", "project", "lane", "barcode_id", "PERCENT_DUPLICATION", "MEAN_INSERT_SIZE", "GENOME_SIZE", "FOLD_ENRICHMENT", "PERCENT_ON_TARGET", "PCT_USABLE_BASES_ON_TARGET", "PCT_TARGET_BASES_10X", "PCT_PF_READS_ALIGNED")
+    write.table(file=reportfile, res.df[,reportcols], sep="\t", row.names=FALSE)
 
-    res.df <- list(dupmetrics=dupmetrics.res.tab,
-                   insertmetrics=insertmetrics.res.tab,
-                   hsmetrics=hsmetrics.res.tab,
-                   alnmetrics=alnmetrics.res.tab,
-                   alnmetrics_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",],
-                   alnmetrics_first_of_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",],
-                   alnmetrics_second_of_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",])
-
-    res.df
+    res.list
 
 }
 
