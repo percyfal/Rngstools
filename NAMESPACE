@@ -20,6 +20,7 @@ export(
        read.hs_metrics,
        read.align_metrics,
        ## bcbb.R
+       get_hiseq_metrics,
        flowcellreport.miseq,
        flowcellreport.hiseq
        )

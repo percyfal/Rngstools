@@ -70,6 +70,11 @@ get_hiseq_metrics <- function(dir, runinfo, pattern, type=c("dup", "hs", "insert
     metrics.res <- lapply(metrics, function(x)  { f=file.path(dir, x);
                                                    switch(type, dup = read.dup_metrics(f), hs=read.hs_metrics(f),
                                                           insert = read.insert_metrics(f), align=read.align_metrics(f))})
+    ## samples <- rownames(runinfo)
+    ## if (type == "align") {
+    ##     samples <- paste(rep(samples, each=3), 1:3, sep=".")
+    ## }
+    ## missingsamples <- samples[!samples %in% names(res)]
     metrics.res
 }
 
@@ -78,9 +83,10 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
     fc <- basename(analysisdir)
     tmp <- yaml.load_file(file.path(flowcelldir, run_info))
     runinfo.tmp <- as.data.frame(do.call("rbind", lapply(tmp, function(x) {do.call("cbind", x)})))
-    runinfo <- cbind(runinfo.tmp, do.call("rbind", runinfo.tmp$multiplex))
+    mpnames <- c("barcode_id", "barcode_type", "genomes_filter_out","name", "sample_prj", "sequence")
+    runinfo <- cbind(runinfo.tmp, do.call("rbind", lapply(runinfo.tmp$multiplex, function(y) {y[mpnames]})))
     rownames(runinfo) <- paste(runinfo$lane, runinfo$barcode_id, sep="_")
-    runinfo.sampleorder <- rownames(runinfo)
+    samples <- rownames(runinfo)
     dupmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.dup_metrics", type="dup")
     alnmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.align_metrics", type="align")
     hsmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.hs_metrics", type="hs")
@@ -104,12 +110,13 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
     print(stripplot(PERCENT_DUPLICATION ~ project, data=dupmetrics.res.tab,  groups=lane, auto.key=list(space="right"), scales=(list(x=list(rot=45))), par.settings=simpleTheme(pch=19),  ylim=c(0,100), xlab="Project", ylab="Percent duplication"))
     dev.off()
 
-
+    ## alnmetrics
     alnmetrics.res.tab <- do.call("rbind", lapply(alnmetrics.res, function(x) {x$metrics}))
-    if (length(setdiff(paste(rownames(runinfo), ".1", sep=""), rownames(alnmetrics.res.tab))) > 0) {
-        alnmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(alnmetrics.res.tab),]),] <- NA
+    if (length(setdiff(paste(samples, "1", sep="."), rownames(alnmetrics.res.tab))) > 0) {
+        missingsamples <- paste(rep(rownames(runinfo)[!paste(rownames(runinfo), 1, sep=".") %in% rownames(alnmetrics.res.tab)], each =3), 1:3, sep=".")
+        alnmetrics.res.tab[missingsamples,] <- NA
     }
-    alnmetrics.res.tab <- cbind(alnmetrics.res.tab, SAMPLE= rep(names(alnmetrics.res), each=3))
+    alnmetrics.res.tab <- cbind(alnmetrics.res.tab, SAMPLE=do.call("cbind", strsplit(rownames(alnmetrics.res.tab), "\\.") )[1,])
     alnmetrics.res.tab$lane <- do.call("c", runinfo[match(alnmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
     alnmetrics.res.tab$project <- do.call("c", runinfo[match(alnmetrics.res.tab$SAMPLE,rownames(runinfo)),]$sample_prj)
 
@@ -172,10 +179,10 @@ dev.off()
     print(bwplot(values ~ ind | project, data=hsmetrics.stack, scales=list(x=list(rot=45)), main="Percentage bases with a given coverage.", xlab="Coverage", ylab="Percentage bases", ylim=c(0,100), par.settings=simpleTheme(pch=19)))
     dev.off()
 
-    res.df <- cbind(runinfo[runinfo.sampleorder,], dupmetrics.res.tab[runinfo.sampleorder,], insertmetrics.res.tab[runinfo.sampleorder,], hsmetrics.res.tab[runinfo.sampleorder,],
-                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",][paste(runinfo.sampleorder, "3", sep="."),],
-                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",][paste(runinfo.sampleorder, "1", sep="."),],
-                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",][paste(runinfo.sampleorder, "2", sep="."),])
+    res.df <- cbind(runinfo[samples,], dupmetrics.res.tab[samples,], insertmetrics.res.tab[samples,], hsmetrics.res.tab[samples,],
+                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",][paste(samples, "3", sep="."),],
+                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",][paste(samples, "1", sep="."),],
+                    alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",][paste(samples, "2", sep="."),])
     res.df$lane <- as.integer(res.df$lane)
     res.df$barcode_id <- as.integer(res.df$barcode_id)
     res.df$name <- as.character(res.df$name)
@@ -193,7 +200,7 @@ dev.off()
     ## dupmetrics
     reportfile <- file.path(outdir, paste(fc, "-metrics.txt", sep=""))
     ## res.df
-    reportcols <- c("SAMPLE", "project", "lane", "barcode_id", "PERCENT_DUPLICATION", "MEAN_INSERT_SIZE", "GENOME_SIZE", "FOLD_ENRICHMENT", "PERCENT_ON_TARGET", "PCT_USABLE_BASES_ON_TARGET", "PCT_TARGET_BASES_10X", "PCT_PF_READS_ALIGNED")
+    reportcols <- c("SAMPLE", "project", "lane", "barcode_id", "name", "TOTAL_READS", "PERCENT_DUPLICATION", "MEAN_INSERT_SIZE", "GENOME_SIZE", "FOLD_ENRICHMENT", "PERCENT_ON_TARGET", "PCT_USABLE_BASES_ON_TARGET", "PCT_TARGET_BASES_10X", "PCT_PF_READS_ALIGNED")
     write.table(file=reportfile, res.df[,reportcols], sep="\t", row.names=FALSE)
 
     res.list
