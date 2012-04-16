@@ -116,7 +116,7 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
         missingsamples <- paste(rep(rownames(runinfo)[!paste(rownames(runinfo), 1, sep=".") %in% rownames(alnmetrics.res.tab)], each =3), 1:3, sep=".")
         alnmetrics.res.tab[missingsamples,] <- NA
     }
-    alnmetrics.res.tab <- cbind(alnmetrics.res.tab, SAMPLE=do.call("cbind", strsplit(rownames(alnmetrics.res.tab), "\\.") )[1,])
+    alnmetrics.res.tab$SAMPLE <- do.call("cbind", strsplit(rownames(alnmetrics.res.tab), "\\."))[1,]
     alnmetrics.res.tab$lane <- do.call("c", runinfo[match(alnmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
     alnmetrics.res.tab$project <- do.call("c", runinfo[match(alnmetrics.res.tab$SAMPLE,rownames(runinfo)),]$sample_prj)
 
@@ -140,7 +140,15 @@ dev.off()
     if (length(setdiff(rownames(runinfo), rownames(insertmetrics.res.tab))) > 0) {
         insertmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(insertmetrics.res.tab),]),] <- NA
     }
-    insertmetrics.res.hist <- do.call("rbind", lapply(names(insertmetrics.res), function(x) {cbind(insertmetrics.res[[x]]$histogram[,c("insert_size", "fr_count")], sample=x)}))
+    insertmetrics.res.tab$SAMPLE <- rownames(insertmetrics.res.tab)
+    insertmetrics.res.hist <- as.data.frame(do.call("rbind", lapply(names(insertmetrics.res),
+                                                                    function(x) {
+                                                                        i.insertsize <- grep("insert_size", colnames(insertmetrics.res[[x]]$histogram))
+                                                                        i.frcount <- grep("fr_count", colnames(insertmetrics.res[[x]]$histogram))
+                                                                        tmp <- cbind(insert_size=insertmetrics.res[[x]]$histogram[,c(i.insertsize, i.frcount)], sample=x)
+                                                                        colnames(tmp) <- c("insert_size", "fr_count", "sample")
+                                                                        tmp
+                                                                    })))
 
     pdf(file=file.path(outdir, "insert-summary.pdf"))
     print(xyplot(fr_count ~ insert_size | sample, data=insertmetrics.res.hist, xlab="Insert size", ylab="Count", xlim=c(0,1000), main="Insert size distributions", type="l", lwd=2))
@@ -150,7 +158,7 @@ dev.off()
     if (length(setdiff(rownames(runinfo), rownames(hsmetrics.res.tab))) > 0) {
         hsmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(hsmetrics.res.tab),]),] <- NA
     }
-    hsmetrics.res.tab <- cbind(SAMPLE=rownames(hsmetrics.res.tab), hsmetrics.res.tab)
+    hsmetrics.res.tab$SAMPLE <- rownames(hsmetrics.res.tab)
     hsmetrics.res.tab$lane <- do.call("c", runinfo[match(hsmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
     hsmetrics.res.tab$project <- do.call("c", runinfo[match(hsmetrics.res.tab$SAMPLE,rownames(runinfo)),]$sample_prj)
     hsmetrics.res.tab <- cbind(hsmetrics.res.tab, PERCENT_ON_TARGET=hsmetrics.res.tab$FOLD_ENRICHMENT/(hsmetrics.res.tab$GENOME_SIZE / hsmetrics.res.tab$TARGET_TERRITORY)* 100)
