@@ -141,18 +141,18 @@ dev.off()
         insertmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(insertmetrics.res.tab),]),] <- NA
     }
     insertmetrics.res.tab$SAMPLE <- rownames(insertmetrics.res.tab)
-    insertmetrics.res.hist <- as.data.frame(do.call("rbind", lapply(names(insertmetrics.res),
-                                                                    function(x) {
-                                                                        i.insertsize <- grep("insert_size", colnames(insertmetrics.res[[x]]$histogram))
-                                                                        i.frcount <- grep("fr_count", colnames(insertmetrics.res[[x]]$histogram))
-                                                                        tmp <- cbind(insert_size=insertmetrics.res[[x]]$histogram[,c(i.insertsize, i.frcount)], sample=x)
-                                                                        colnames(tmp) <- c("insert_size", "fr_count", "sample")
-                                                                        tmp
-                                                                    })))
+    #insertmetrics.res.hist <- as.data.frame(do.call("rbind", lapply(names(insertmetrics.res),
+     #                                                               function(x) {
+      #                                                                  i.insertsize <- grep("insert_size", colnames(insertmetrics.res[[x]]$histogram))
+       #                                                                 i.frcount <- grep("fr_count", colnames(insertmetrics.res[[x]]$histogram))
+        #                                                                tmp <- cbind(insert_size=insertmetrics.res[[x]]$histogram[,c(i.insertsize, i.frcount)], sample=x)
+         #                                                               colnames(tmp) <- c("insert_size", "fr_count", "sample")
+          #                                                              tmp
+           #                                                         })))
 
-    pdf(file=file.path(outdir, "insert-summary.pdf"))
-    print(xyplot(fr_count ~ insert_size | sample, data=insertmetrics.res.hist, xlab="Insert size", ylab="Count", xlim=c(0,1000), main="Insert size distributions", type="l", lwd=2))
-    dev.off()
+    #pdf(file=file.path(outdir, "insert-summary.pdf"))
+    #print(xyplot(fr_count ~ insert_size | sample, data=insertmetrics.res.hist, xlab="Insert size", ylab="Count", xlim=c(0,1000), main="Insert size distributions", type="l", lwd=2))
+    #dev.off()
 
     hsmetrics.res.tab <- do.call("rbind", lapply(hsmetrics.res, function(x) {x$metrics}))
     if (length(setdiff(rownames(runinfo), rownames(hsmetrics.res.tab))) > 0) {
