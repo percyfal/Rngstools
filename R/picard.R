@@ -38,5 +38,9 @@ read.hs_metrics <- function(infile, pct.mult=TRUE, pct.char=list("PCT", "ON_BAIT
         i <- unique(do.call("c", lapply(pct.char, function(x) {which(grepl(x, colnames(res$metrics)))})))
         res$metrics[,i] <- res$metrics[,i] * 100
     }
+    v159cols <- c("AT_DROPOUT","GC_DROPOUT","SAMPLE","LIBRARY","READ_GROUP")
+    if (length(colnames(res$metrics))==35) {
+        res$metrics[,v159cols] <- NA
+    }
     res
 }
