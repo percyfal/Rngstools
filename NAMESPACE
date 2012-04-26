@@ -22,5 +22,6 @@ export(
        ## bcbb.R
        get_hiseq_metrics,
        flowcellreport.miseq,
-       flowcellreport.hiseq
+       flowcellreport.hiseq,
+       projectreport
        )

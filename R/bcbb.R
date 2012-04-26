@@ -62,9 +62,13 @@ dev.off()
 }
 
 
-get_hiseq_metrics <- function(dir, runinfo, pattern, type=c("dup", "hs", "insert", "align")) {
+get_hiseq_metrics <- function(dir, runinfo, pattern, type=c("dup", "hs", "insert", "align"), sampletable=NULL) {
     metrics <- list.files(dir, pattern=pattern)
     sampleinfo <- lapply(strsplit(metrics, "_"), function(x){paste(x[1], gsub("([0-9]+)-.*", "\\1", x[5]), sep="_")})
+    sampleinfo <- gsub("_NA", "", sampleinfo)
+    if (!is.null(sampletable)) {
+        sampleinfo <- sampletable[match(sampleinfo, sampletable[,1]),2]
+    }
     names(metrics) <- sampleinfo
     type <- match.arg(type)
     metrics.res <- lapply(metrics, function(x)  { f=file.path(dir, x);
@@ -220,4 +224,83 @@ print.flowcellmetrics <- function(res, outcols=c(10, 8, 14, 34, 52, 53, 70)) {
     tmp <- res[,outcols]
     tmp$PCT_ON_TARGET <- res$FOLD_ENRICHMENT / (res$GENOME_SIZE/res$TARGET_TERRITORY) * 100
     tmp
+}
+
+projectreport <- function(analysisdir, run_info, outdir) {
+    #fc <- basename(analysisdir)
+    tmp <- yaml.load_file(run_info)
+    runinfo.tmp <- as.data.frame(do.call("rbind", lapply(tmp, function(x) {do.call("cbind", x)})))
+    runinfo <- as.data.frame(do.call("rbind", runinfo.tmp))
+    fcinfo <- do.call("rbind", lapply(runinfo$files, function(x) {strsplit(gsub(".*/", "", x), "_")[[1]][1:3]}))
+    colnames(fcinfo) <- c("fc_lane", "date", "flowcell")
+    runinfo <- cbind(runinfo, fcinfo)
+    rownames(runinfo) <- runinfo$lane
+
+    samples <- runinfo$description
+    dupmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.dup_metrics", type="dup", sampletable=runinfo[,c("lane", "description")])
+    alnmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.align_metrics", type="align", sampletable=runinfo[,c("lane", "description")])
+    ##hsmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.hs_metrics", type="hs", sampletable=runinfo[,c("lane", "description")])
+    insertmetrics.res <- get_hiseq_metrics(analysisdir, runinfo, pattern="*.insert_metrics", type="insert", sampletable=runinfo[,c("lane", "description")])
+
+    dupmetrics.res.tab <- do.call("rbind", lapply(dupmetrics.res, function(x) {x$metrics}))
+    dupmetrics.res.tab$SAMPLE <- rownames(dupmetrics.res.tab)
+    dupmetrics.res.tab$lane <- do.call("c", runinfo[match(dupmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
+
+    pdf(file=file.path(outdir, "dup-summary.pdf"))
+    print(stripplot(PERCENT_DUPLICATION ~ SAMPLE, data=dupmetrics.res.tab,  scales=(list(x=list(rot=45))), par.settings=simpleTheme(pch=19),  ylim=c(0,100), xlab="Sample", ylab="Percent duplication"))
+    dev.off()
+
+    ## alnmetrics
+    alnmetrics.res.tab <- do.call("rbind", lapply(alnmetrics.res, function(x) {x$metrics}))
+    alnmetrics.res.tab$SAMPLE <- do.call("cbind", strsplit(rownames(alnmetrics.res.tab), "\\."))[1,]
+    alnmetrics.res.tab$lane <- do.call("c", runinfo[match(alnmetrics.res.tab$SAMPLE, rownames(runinfo)),]$lane)
+
+    pdf(file=file.path(outdir, "mapping-summary.pdf"))
+    print(stripplot(TOTAL_READS/1e6 + PF_READS_ALIGNED/1e6  ~ CATEGORY | SAMPLE, data=alnmetrics.res.tab, auto.key=list(text=c("Reads", "Aligned")), scales=list(x=list(rot=45)), ylab="Reads (millions)", xlab="Category.", par.settings=simpleTheme(col=c("black","red"), pch=21)))
+dev.off()
+
+    pdf(file=file.path(outdir, "mapping-summary-by-category.pdf"))
+    print(stripplot(PCT_PF_READS_ALIGNED ~ SAMPLE | CATEGORY,groups=SAMPLE, data=alnmetrics.res.tab, auto.key=list(space="right"), scales=(list(x=list(rot=45))), par.settings=simpleTheme(pch=19)))
+    dev.off()
+
+
+    insertmetrics.res.tab <- do.call("rbind", lapply(insertmetrics.res, function(x) {x$metrics}))
+    insertmetrics.res.tab$SAMPLE <- rownames(insertmetrics.res.tab)
+    insertmetrics.res.hist <- as.data.frame(do.call("rbind", lapply(names(insertmetrics.res),
+                                                                   function(x) {
+                                                                       i.insertsize <- grep("insert_size", colnames(insertmetrics.res[[x]]$histogram))
+                                                                       i.frcount <- grep("fr_count", colnames(insertmetrics.res[[x]]$histogram))
+                                                                       tmp <- cbind(insert_size=insertmetrics.res[[x]]$histogram[,c(i.insertsize, i.frcount)], sample=x)
+                                                                       colnames(tmp) <- c("insert_size", "fr_count", "sample")
+                                                                       tmp
+                                                                   })))
+
+    pdf(file=file.path(outdir, "insert-summary.pdf"))
+    print(xyplot(fr_count ~ insert_size | sample, data=insertmetrics.res.hist, xlab="Insert size", ylab="Count", xlim=c(0,1000), main="Insert size distributions", type="l", lwd=2))
+    dev.off()
+
+
+    ## res.df <- cbind(runinfo[samples,], dupmetrics.res.tab[samples,], insertmetrics.res.tab[samples,],
+    ##                 alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",][paste(samples, "3", sep="."),],
+    ##                 alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",][paste(samples, "1", sep="."),],
+    ##                 alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",][paste(samples, "2", sep="."),])
+    ## res.df$lane <- as.integer(res.df$lane)
+    ## res.df$name <- as.character(res.df$name)
+
+    res.list <- list(dupmetrics=dupmetrics.res.tab,
+                     insertmetrics=insertmetrics.res.tab,
+                     alnmetrics=alnmetrics.res.tab,
+                     alnmetrics_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="PAIR",],
+                     alnmetrics_first_of_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="FIRST_OF_PAIR",],
+                     alnmetrics_second_of_pair=alnmetrics.res.tab[alnmetrics.res.tab$CATEGORY=="SECOND_OF_PAIR",])
+
+
+    ## ## Write a table with the most important information
+    ## ## dupmetrics
+    ## reportfile <- file.path(outdir, paste(fc, "-metrics.txt", sep=""))
+    ## ## res.df
+    ## reportcols <- c("SAMPLE", "project", "lane", "barcode_id", "name", "TOTAL_READS", "PERCENT_DUPLICATION", "MEAN_INSERT_SIZE", "GENOME_SIZE", "PCT_PF_READS_ALIGNED")
+    ## write.table(file=reportfile, res.df[,reportcols], sep="\t", row.names=FALSE)
+
+    res.list
 }

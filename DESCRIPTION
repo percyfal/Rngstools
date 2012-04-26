@@ -1,7 +1,7 @@
 Package: Rngstools
 Type: Package
 Title: Utility functions for next generation sequencing analysis
-Version: 0.1.5.8
+Version: 0.1.5.9
 Date: 2012-04-18
 Author: Per Unneberg
 Maintainer: <punneberg@gmail.com>
