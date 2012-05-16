@@ -103,13 +103,13 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
                      alnmetrics_pair=NA, alnmetrics_first_of_pair=NA,
                      alnmetrics_second_of_pair=NA)
 
-    res.df <- NULL
+    res.df <- runinfo
     ## duplication metrics
     if (dupmetrics$run) {
         cat("Adding dupmetrics...\n")
         dupmetrics.res.tab <- getDupmetrics(analysisdir, runinfo, outdir, dupmetrics$pattern)
         res.list$dupmetrics <- dupmetrics.res.tab
-        res.df <- dupmetrics.res.tab
+        res.df <- cbind(res.df, dupmetrics.res.tab)
         reportfile <- file.path(outdir, "dupmetrics.txt")
         write.table(file=reportfile, dupmetrics.res.tab, sep="\t", row.names=TRUE)
     }
@@ -260,8 +260,8 @@ getDupmetrics <- function(analysisdir, runinfo, outdir, pattern="*.dup_metrics")
         print(stripplot(PERCENT_DUPLICATION ~ project, data=dupmetrics.res.tab,  groups=lane, auto.key=list(space="right"), scales=(list(x=list(rot=45))), par.settings=simpleTheme(pch=19),  ylim=c(0,100), xlab="Project", ylab="Percent duplication"))
         dev.off()
     }
-
-    dupmetrics.res.tab
+    dupmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(dupmetrics.res.tab),]),] <- NA
+    dupmetrics.res.tab[match(rownames(runinfo), rownames(dupmetrics.res.tab)),]
 }
 
 getAlnmetrics <- function(analysisdir, runinfo, outdir, pattern="*.align_metrics") {
@@ -294,7 +294,12 @@ getAlnmetrics <- function(analysisdir, runinfo, outdir, pattern="*.align_metrics
         print(stripplot(PCT_PF_READS_ALIGNED ~ project | CATEGORY, groups=lane, data=alnmetrics.res.tab, auto.key=list(space="right"), scales=(list(x=list(rot=45))), par.settings=simpleTheme(pch=19)))
         dev.off()
     }
-    alnmetrics.res.tab
+    alnmetrics.names <- paste(rep(rownames(runinfo), each=3), 1:3, sep="." )
+    alnmetrics.category <- factor(rep(c("FIRST_OF_PAIR", "SECOND_OF_PAIR", "PAIR"), dim(runinfo)[1]))
+    i <- alnmetrics.names[!alnmetrics.names %in% rownames(alnmetrics.res.tab)]
+    alnmetrics.res.tab[i,] <- NA
+    alnmetrics.res.tab$CATEGORY <- alnmetrics.category
+    alnmetrics.res.tab[match(alnmetrics.names, rownames(alnmetrics.res.tab)),]
 }
 
 getInsertmetrics <- function(analysisdir, runinfo, outdir, pattern="*.insert_metrics") {
@@ -340,7 +345,8 @@ getInsertmetrics <- function(analysisdir, runinfo, outdir, pattern="*.insert_met
     pdf(file=file.path(outdir, "insert-tandem-summary.pdf"))
     print(xyplot(rf_count ~ insert_size | sample, data=insertmetrics.res.hist, xlab="Insert size", ylab="Count", xlim=c(0,10000), main="Insert size distributions", type="l", lwd=2))
     dev.off()
-    insertmetrics.res.tab
+    insertmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(insertmetrics.res.tab),]),] <- NA
+    insertmetrics.res.tab[match(rownames(runinfo), rownames(insertmetrics.res.tab)),]
 }
 
 getHsmetrics <- function(analysisdir, runinfo,  outdir, pattern="*.hs_metrics", ...) {
@@ -385,13 +391,9 @@ getHsmetrics <- function(analysisdir, runinfo,  outdir, pattern="*.hs_metrics", 
         pdf(file=file.path(outdir, "hs-coverage-by-project-bw.pdf"))
         print(bwplot(values ~ ind | project, data=hsmetrics.stack, scales=list(x=list(rot=45)), main="Percentage bases with a given coverage.", xlab="Coverage", ylab="Percentage bases", ylim=c(0,100), par.settings=simpleTheme(pch=19)))
         dev.off()
-        if (length(setdiff(rownames(res.df), rownames(hsmetrics.res.tab))) > 0) {
-            hsmetrics.res.tab[rownames(res.df[!rownames(res.df) %in% rownames(hsmetrics.res.tab),]),] <- NA
-        }
-        hsmetrics.res.tab <- hsmetrics.res.tab[match(rownames(res.df), rownames(hsmetrics.res.tab)), ]
     }
-
-    hsmetrics.res.tab
+    hsmetrics.res.tab[rownames(runinfo[!rownames(runinfo) %in% rownames(hsmetrics.res.tab),]),] <- NA
+    hsmetrics.res.tab[match(rownames(runinfo), rownames(hsmetrics.res.tab)),]
 }
 
 ## Assumes metrics are named lane_[description|index]
