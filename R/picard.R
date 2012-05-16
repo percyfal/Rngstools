@@ -33,7 +33,11 @@ read.insert_metrics <- function(infile, ...) {
 read.hs_metrics <- function(infile, pct.mult=TRUE, pct.char=list("PCT", "ON_BAIT_VS_SELECTED"), ...) {
     lines <- readLines(infile)
     res <- list()
-    res$metrics <- rbind(read.table(textConnection(lines[7:8]), header=TRUE, fill=TRUE, sep="\t", na.strings=c("?"), ...))
+    dec = "."
+    if (length(grep(",", lines[7:8])) > 0) {
+        dec=","
+    }
+    res$metrics <- rbind(read.table(textConnection(lines[7:8]), header=TRUE, fill=TRUE, sep="\t", na.strings=c("?"), dec=dec, ...))
     if (pct.mult) {
         i <- unique(do.call("c", lapply(pct.char, function(x) {which(grepl(x, colnames(res$metrics)))})))
         res$metrics[,i] <- res$metrics[,i] * 100
