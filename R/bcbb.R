@@ -221,6 +221,10 @@ projectreport <- function(analysisdir, run_info, outdir, dupmetrics=list(run=TRU
         cat("Adding hsmetrics...\n")
         hsmetrics.res.tab <- getHsmetrics(analysisdir, runinfo,  outdir, pattern=hsmetrics$pattern)
         res.list$hsmetrics=hsmetrics.res.tab
+        if (length(setdiff(rownames(res.df), rownames(hsmetrics.res.tab))) > 0) {
+            hsmetrics.res.tab[rownames(res.df[!rownames(res.df) %in% rownames(hsmetrics.res.tab),]),] <- NA
+        }
+        hsmetrics.res.tab <- hsmetrics.res.tab[match(rownames(res.df), rownames(hsmetrics.res.tab)), ]
         res.df <- cbind(res.df, hsmetrics.res.tab)
         reportfile <- file.path(outdir, "hsmetrics.txt")
         write.table(file=reportfile, hsmetrics.res.tab, sep="\t", row.names=FALSE)
