@@ -221,6 +221,10 @@ projectreport <- function(analysisdir, run_info, outdir, dupmetrics=list(run=TRU
         cat("Adding hsmetrics...\n")
         hsmetrics.res.tab <- getHsmetrics(analysisdir, runinfo,  outdir, pattern=hsmetrics$pattern)
         res.list$hsmetrics=hsmetrics.res.tab
+        if (length(setdiff(rownames(res.df), rownames(hsmetrics.res.tab))) > 0) {
+            hsmetrics.res.tab[rownames(res.df[!rownames(res.df) %in% rownames(hsmetrics.res.tab),]),] <- NA
+        }
+        hsmetrics.res.tab <- hsmetrics.res.tab[match(rownames(res.df), rownames(hsmetrics.res.tab)), ]
         res.df <- cbind(res.df, hsmetrics.res.tab)
         reportfile <- file.path(outdir, "hsmetrics.txt")
         write.table(file=reportfile, hsmetrics.res.tab, sep="\t", row.names=FALSE)
@@ -385,10 +389,6 @@ getHsmetrics <- function(analysisdir, runinfo,  outdir, pattern="*.hs_metrics", 
         pdf(file=file.path(outdir, "hs-coverage-by-project-bw.pdf"))
         print(bwplot(values ~ ind | project, data=hsmetrics.stack, scales=list(x=list(rot=45)), main="Percentage bases with a given coverage.", xlab="Coverage", ylab="Percentage bases", ylim=c(0,100), par.settings=simpleTheme(pch=19)))
         dev.off()
-        if (length(setdiff(rownames(res.df), rownames(hsmetrics.res.tab))) > 0) {
-            hsmetrics.res.tab[rownames(res.df[!rownames(res.df) %in% rownames(hsmetrics.res.tab),]),] <- NA
-        }
-        hsmetrics.res.tab <- hsmetrics.res.tab[match(rownames(res.df), rownames(hsmetrics.res.tab)), ]
     }
 
     hsmetrics.res.tab
