@@ -158,7 +158,10 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
     ## Write a table with the most important information
     ## dupmetrics
     reportfile <- file.path(outdir, paste(fc, "-metrics.txt", sep=""))
-    reportcols <- c("SAMPLE", "project", "lane", "TOTAL_READS", "PERCENT_DUPLICATION", "MEAN_INSERT_SIZE", "GENOME_SIZE", "FOLD_ENRICHMENT", "PERCENT_ON_TARGET", "PCT_USABLE_BASES_ON_TARGET", "PCT_TARGET_BASES_10X", "aln_PCT_PF_READS_ALIGNED_1")
+    res.df$name <- do.call("c", lapply(res.df$name, function(x) {x[[1]]}))
+    res.df$barcode_id <- do.call("c", lapply(res.df$barcode_id, function(x) {x[[1]]}))
+    reportcols <- c("SAMPLE", "project", "lane", "name", "barcode_id", "TOTAL_READS", "PERCENT_DUPLICATION", "MEAN_INSERT_SIZE", "GENOME_SIZE", "FOLD_ENRICHMENT", "PERCENT_ON_TARGET", "PCT_USABLE_BASES_ON_TARGET", "PCT_TARGET_BASES_10X", "aln_PCT_PF_READS_ALIGNED_1")
+
     write.table(file=reportfile, res.df[,reportcols], sep="\t", row.names=FALSE)
     list(res.list, res.df)
 }
