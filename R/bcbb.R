@@ -90,14 +90,25 @@ print.flowcellmetrics <- function(res, outcols=c(10, 8, 14, 34, 52, 53, 70)) {
     tmp
 }
 
-flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run_info.yaml", dupmetrics=list(run=TRUE, pattern="*.dup_metrics", dec="."), insertmetrics=list(run=TRUE, pattern="*.insert_metrics"), alnmetrics=list(run=TRUE, pattern="*.align_metrics"), hsmetrics=list(run=TRUE, pattern="*.hs_metrics"), gcmetrics=list(run=TRUE, pattern="*.gc_metrics")) {
+flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run_info.yaml", keep_going=FALSE, dupmetrics=list(run=TRUE, pattern="*.dup_metrics", dec="."), insertmetrics=list(run=TRUE, pattern="*.insert_metrics"), alnmetrics=list(run=TRUE, pattern="*.align_metrics"), hsmetrics=list(run=TRUE, pattern="*.hs_metrics"), gcmetrics=list(run=TRUE, pattern="*.gc_metrics")) {
 
     fc <- basename(analysisdir)
     tmp <- yaml.load_file(file.path(flowcelldir, run_info))
     runinfo.tmp <- as.data.frame(do.call("rbind", lapply(tmp, function(x) {do.call("cbind", x)})))
     mpnames <- c("barcode_id", "barcode_type", "genomes_filter_out","name", "sample_prj", "sequence")
     runinfo <- cbind(runinfo.tmp, do.call("rbind", lapply(runinfo.tmp$multiplex, function(y) {y[mpnames]})))
-    rownames(runinfo) <- paste(runinfo$lane, runinfo$barcode_id, sep="_")
+    lane_bc <-  paste(runinfo$lane, runinfo$barcode_id, sep="_")
+    if (length(lane_bc) != length(unique(lane_bc))) {
+        warning("some lane_barcode combinations are non-unique; check run_info.yaml for duplicated indices in a lane")
+        message("suspicious entries: ", lane_bc[duplicated(lane_bc)])
+        if (!keep_going)
+            stop("set flag keep_going=TRUE to use existing run_info.yaml, eliminating duplicated lines (the first is kept)")
+        else {
+            runinfo <- runinfo[!duplicated(lane_bc),]
+            lane_bc <- paste(runinfo$lane, runinfo$barcode_id, sep="_")
+        }
+
+    rownames(runinfo) <- lane_bc
     samples <- rownames(runinfo)
     res.list <- list(dupmetrics=NA, insertmetrics=NA, alnmetrics=NA,
                      alnmetrics_pair=NA, alnmetrics_first_of_pair=NA,
