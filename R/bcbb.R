@@ -100,13 +100,14 @@ flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run
     lane_bc <-  paste(runinfo$lane, runinfo$barcode_id, sep="_")
     if (length(lane_bc) != length(unique(lane_bc))) {
         warning("some lane_barcode combinations are non-unique; check run_info.yaml for duplicated indices in a lane")
-        message("suspicious entries: ", lane_bc[duplicated(lane_bc)])
+        message("duplication in run_info. Suspicious entries: ", lane_bc[duplicated(lane_bc)])
         if (!keep_going)
             stop("set flag keep_going=TRUE to use existing run_info.yaml, eliminating duplicated lines (the first is kept)")
         else {
             runinfo <- runinfo[!duplicated(lane_bc),]
             lane_bc <- paste(runinfo$lane, runinfo$barcode_id, sep="_")
         }
+    }
 
     rownames(runinfo) <- lane_bc
     samples <- rownames(runinfo)
