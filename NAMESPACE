@@ -23,5 +23,10 @@ export(
        get_hiseq_metrics,
        flowcellreport.miseq,
        flowcellreport.hiseq,
-       projectreport
+       projectreport,
+       getDupmetrics,
+       getAlnmetrics,
+       getInsertmetrics,
+       getHsmetrics,
+       getLaneAndDescription
        )
