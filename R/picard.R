@@ -36,7 +36,8 @@ read.align_metrics <- function(infile, pct.mult=TRUE, pct.char=list("PCT", "STRA
 read.insert_metrics <- function(infile, ...) {
     lines <- readLines(infile)
     res <- list()
-    res$metrics <- rbind(read.table(textConnection(lines[7:8]), header=TRUE, fill=TRUE, sep="\t", na.strings=c("?"), ...))
+    dec <- setdec(lines[7:8])
+    res$metrics <- rbind(read.table(textConnection(lines[7:8]), header=TRUE, fill=TRUE, sep="\t", na.strings=c("?"), dec=dec, ...))
     res$histogram <- rbind(read.table(textConnection(lines[11:length(lines)]), header=TRUE, fill=TRUE, sep="\t",...))
     res
 }
@@ -45,7 +46,7 @@ read.hs_metrics <- function(infile, pct.mult=TRUE, pct.char=list("PCT", "ON_BAIT
     lines <- readLines(infile)
     res <- list()
     dec = setdec(lines[7:8])
-    res$metrics <- rbind(read.table(textConnection(lines[7:8]), header=TRUE, fill=TRUE, sep="\t", na.strings=c("?"), dec, ...))
+    res$metrics <- rbind(read.table(textConnection(lines[7:8]), header=TRUE, fill=TRUE, sep="\t", na.strings=c("?"), dec=dec, ...))
     if (pct.mult) {
         i <- unique(do.call("c", lapply(pct.char, function(x) {which(grepl(x, colnames(res$metrics)))})))
         res$metrics[,i] <- res$metrics[,i] * 100

@@ -90,9 +90,7 @@ print.flowcellmetrics <- function(res, outcols=c(10, 8, 14, 34, 52, 53, 70)) {
     tmp
 }
 
-flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run_info.yaml", keep_going=FALSE, dec=".", dupmetrics=list(run=TRUE, pattern="*.dup_metrics"), insertmetrics=list(run=TRUE, pattern="*.insert_metrics"), alnmetrics=list(run=TRUE, pattern="*.align_metrics"), hsmetrics=list(run=TRUE, pattern="*.hs_metrics"), gcmetrics=list(run=TRUE, pattern="*.gc_metrics")) {
-    stopifnot(dec !%in% c(".", ","))
-    options()$Rngstools$dec = dec
+flowcellreport.hiseq <- function(analysisdir, flowcelldir, outdir, run_info="run_info.yaml", keep_going=FALSE, dupmetrics=list(run=TRUE, pattern="*.dup_metrics"), insertmetrics=list(run=TRUE, pattern="*.insert_metrics"), alnmetrics=list(run=TRUE, pattern="*.align_metrics"), hsmetrics=list(run=TRUE, pattern="*.hs_metrics"), gcmetrics=list(run=TRUE, pattern="*.gc_metrics")) {
     fc <- basename(analysisdir)
     tmp <- yaml.load_file(file.path(flowcelldir, run_info))
     runinfo.tmp <- as.data.frame(do.call("rbind", lapply(tmp, function(x) {do.call("cbind", x)})))
