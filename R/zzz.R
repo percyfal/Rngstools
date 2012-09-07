@@ -3,3 +3,7 @@
 ##   Library Loading
 
 .RngstoolsEnv <- new.env()
+
+.onLoad <- function(libname, pkgname) {
+    .setRngstoolsOptions(pkgname)
+}
